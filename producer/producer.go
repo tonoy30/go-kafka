@@ -2,8 +2,8 @@ package producer
 
 import (
 	"fmt"
-
 	"github.com/Shopify/sarama"
+	"log"
 )
 
 func ConnectProducer(brokersUrl []string) (sarama.SyncProducer, error) {
@@ -18,21 +18,26 @@ func ConnectProducer(brokersUrl []string) (sarama.SyncProducer, error) {
 	return conn, nil
 }
 
-func PushCommitToTopic(topic string, message []byte) error {
-	brokersUrl := []string{"kafkahost1:9092", "kafkahost2:9092"}
+func PushCommitToTopic(topic string, message []byte) (string, error) {
+	brokersUrl := []string{"localhost:9092"}
 	producer, err := ConnectProducer(brokersUrl)
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer producer.Close()
+	defer func(producer sarama.SyncProducer) {
+		err := producer.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}(producer)
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Value: sarama.ByteEncoder(message),
 	}
 	partition, offset, err := producer.SendMessage(msg)
 	if err != nil {
-		return err
+		return "", err
 	}
-	fmt.Printf("Message is stored in topic(%s)/partition(%d)/offset(%d)\n", topic, partition, offset)
-	return nil
+	successMsg := fmt.Sprintf("Message is stored in topic(%s)/partition(%d)/offset(%d)", topic, partition, offset)
+	return successMsg, nil
 }
