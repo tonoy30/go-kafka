@@ -26,6 +26,6 @@ services:
 
 volumes:
   zookeeper_data:
-    driver: bridge
+    driver: local
   kafka_data:
-    driver: bridge
+    driver: local
